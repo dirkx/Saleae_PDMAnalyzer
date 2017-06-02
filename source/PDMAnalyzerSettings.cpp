@@ -1,13 +1,13 @@
-#include "SimpleSerialAnalyzerSettings.h"
+#include "PDMAnalyzerSettings.h"
 #include <AnalyzerHelpers.h>
 
 
-SimpleSerialAnalyzerSettings::SimpleSerialAnalyzerSettings()
+PDMAnalyzerSettings::PDMAnalyzerSettings()
 :	mInputChannel( UNDEFINED_CHANNEL ),
 	mBitRate( 9600 )
 {
 	mInputChannelInterface.reset( new AnalyzerSettingInterfaceChannel() );
-	mInputChannelInterface->SetTitleAndTooltip( "Serial", "Standard Simple Serial" );
+	mInputChannelInterface->SetTitleAndTooltip( "Serial", "Standard PDM" );
 	mInputChannelInterface->SetChannel( mInputChannel );
 
 	mBitRateInterface.reset( new AnalyzerSettingInterfaceInteger() );
@@ -27,28 +27,28 @@ SimpleSerialAnalyzerSettings::SimpleSerialAnalyzerSettings()
 	AddChannel( mInputChannel, "Serial", false );
 }
 
-SimpleSerialAnalyzerSettings::~SimpleSerialAnalyzerSettings()
+PDMAnalyzerSettings::~PDMAnalyzerSettings()
 {
 }
 
-bool SimpleSerialAnalyzerSettings::SetSettingsFromInterfaces()
+bool PDMAnalyzerSettings::SetSettingsFromInterfaces()
 {
 	mInputChannel = mInputChannelInterface->GetChannel();
 	mBitRate = mBitRateInterface->GetInteger();
 
 	ClearChannels();
-	AddChannel( mInputChannel, "Simple Serial", true );
+	AddChannel( mInputChannel, "PDM", true );
 
 	return true;
 }
 
-void SimpleSerialAnalyzerSettings::UpdateInterfacesFromSettings()
+void PDMAnalyzerSettings::UpdateInterfacesFromSettings()
 {
 	mInputChannelInterface->SetChannel( mInputChannel );
 	mBitRateInterface->SetInteger( mBitRate );
 }
 
-void SimpleSerialAnalyzerSettings::LoadSettings( const char* settings )
+void PDMAnalyzerSettings::LoadSettings( const char* settings )
 {
 	SimpleArchive text_archive;
 	text_archive.SetString( settings );
@@ -57,12 +57,12 @@ void SimpleSerialAnalyzerSettings::LoadSettings( const char* settings )
 	text_archive >> mBitRate;
 
 	ClearChannels();
-	AddChannel( mInputChannel, "Simple Serial", true );
+	AddChannel( mInputChannel, "PDM", true );
 
 	UpdateInterfacesFromSettings();
 }
 
-const char* SimpleSerialAnalyzerSettings::SaveSettings()
+const char* PDMAnalyzerSettings::SaveSettings()
 {
 	SimpleArchive text_archive;
 

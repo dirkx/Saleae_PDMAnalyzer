@@ -1,28 +1,28 @@
-#include "SimpleSerialAnalyzer.h"
-#include "SimpleSerialAnalyzerSettings.h"
+#include "PDMAnalyzer.h"
+#include "PDMAnalyzerSettings.h"
 #include <AnalyzerChannelData.h>
 
-SimpleSerialAnalyzer::SimpleSerialAnalyzer()
+PDMAnalyzer::PDMAnalyzer()
 :	Analyzer2(),  
-	mSettings( new SimpleSerialAnalyzerSettings() ),
+	mSettings( new PDMAnalyzerSettings() ),
 	mSimulationInitilized( false )
 {
 	SetAnalyzerSettings( mSettings.get() );
 }
 
-SimpleSerialAnalyzer::~SimpleSerialAnalyzer()
+PDMAnalyzer::~PDMAnalyzer()
 {
 	KillThread();
 }
 
-void SimpleSerialAnalyzer::SetupResults()
+void PDMAnalyzer::SetupResults()
 {
-	mResults.reset( new SimpleSerialAnalyzerResults( this, mSettings.get() ) );
+	mResults.reset( new PDMAnalyzerResults( this, mSettings.get() ) );
 	SetAnalyzerResults( mResults.get() );
 	mResults->AddChannelBubblesWillAppearOn( mSettings->mInputChannel );
 }
 
-void SimpleSerialAnalyzer::WorkerThread()
+void PDMAnalyzer::WorkerThread()
 {
 	mSampleRateHz = GetSampleRate();
 
@@ -72,12 +72,12 @@ void SimpleSerialAnalyzer::WorkerThread()
 	}
 }
 
-bool SimpleSerialAnalyzer::NeedsRerun()
+bool PDMAnalyzer::NeedsRerun()
 {
 	return false;
 }
 
-U32 SimpleSerialAnalyzer::GenerateSimulationData( U64 minimum_sample_index, U32 device_sample_rate, SimulationChannelDescriptor** simulation_channels )
+U32 PDMAnalyzer::GenerateSimulationData( U64 minimum_sample_index, U32 device_sample_rate, SimulationChannelDescriptor** simulation_channels )
 {
 	if( mSimulationInitilized == false )
 	{
@@ -88,24 +88,24 @@ U32 SimpleSerialAnalyzer::GenerateSimulationData( U64 minimum_sample_index, U32 
 	return mSimulationDataGenerator.GenerateSimulationData( minimum_sample_index, device_sample_rate, simulation_channels );
 }
 
-U32 SimpleSerialAnalyzer::GetMinimumSampleRateHz()
+U32 PDMAnalyzer::GetMinimumSampleRateHz()
 {
 	return mSettings->mBitRate * 4;
 }
 
-const char* SimpleSerialAnalyzer::GetAnalyzerName() const
+const char* PDMAnalyzer::GetAnalyzerName() const
 {
-	return "Simple Serial";
+	return "PDM";
 }
 
 const char* GetAnalyzerName()
 {
-	return "Simple Serial";
+	return "PDM";
 }
 
 Analyzer* CreateAnalyzer()
 {
-	return new SimpleSerialAnalyzer();
+	return new PDMAnalyzer();
 }
 
 void DestroyAnalyzer( Analyzer* analyzer )

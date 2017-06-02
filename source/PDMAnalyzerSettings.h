@@ -1,14 +1,14 @@
-#ifndef SIMPLESERIAL_ANALYZER_SETTINGS
-#define SIMPLESERIAL_ANALYZER_SETTINGS
+#ifndef PDM_ANALYZER_SETTINGS
+#define PDM_ANALYZER_SETTINGS
 
 #include <AnalyzerSettings.h>
 #include <AnalyzerTypes.h>
 
-class SimpleSerialAnalyzerSettings : public AnalyzerSettings
+class PDMAnalyzerSettings : public AnalyzerSettings
 {
 public:
-	SimpleSerialAnalyzerSettings();
-	virtual ~SimpleSerialAnalyzerSettings();
+	PDMAnalyzerSettings();
+	virtual ~PDMAnalyzerSettings();
 
 	virtual bool SetSettingsFromInterfaces();
 	void UpdateInterfacesFromSettings();
@@ -24,4 +24,4 @@ protected:
 	std::auto_ptr< AnalyzerSettingInterfaceInteger >	mBitRateInterface;
 };
 
-#endif //SIMPLESERIAL_ANALYZER_SETTINGS
+#endif //PDM_ANALYZER_SETTINGS
