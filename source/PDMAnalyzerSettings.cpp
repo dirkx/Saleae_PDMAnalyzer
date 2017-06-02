@@ -3,28 +3,35 @@
 
 
 PDMAnalyzerSettings::PDMAnalyzerSettings()
-:	mInputChannel( UNDEFINED_CHANNEL ),
-	mBitRate( 9600 )
+:	mClockChannel( UNDEFINED_CHANNEL ),
+    mDataChannel( UNDEFINED_CHANNEL),
+    mBitsPerSample( 64 )
 {
-	mInputChannelInterface.reset( new AnalyzerSettingInterfaceChannel() );
-	mInputChannelInterface->SetTitleAndTooltip( "Serial", "Standard PDM" );
-	mInputChannelInterface->SetChannel( mInputChannel );
+	mClockChannelInterface.reset( new AnalyzerSettingInterfaceChannel() );
+	mClockChannelInterface->SetTitleAndTooltip( "Clock", "Clock" );
+	mClockChannelInterface->SetChannel( mClockChannel );
 
-	mBitRateInterface.reset( new AnalyzerSettingInterfaceInteger() );
-	mBitRateInterface->SetTitleAndTooltip( "Bit Rate (Bits/S)",  "Specify the bit rate in bits per second." );
-	mBitRateInterface->SetMax( 6000000 );
-	mBitRateInterface->SetMin( 1 );
-	mBitRateInterface->SetInteger( mBitRate );
+	mDataChannelInterface.reset( new AnalyzerSettingInterfaceChannel() );
+	mDataChannelInterface->SetTitleAndTooltip( "Data", "PDM Clock" );
+	mDataChannelInterface->SetChannel( mDataChannel );
 
-	AddInterface( mInputChannelInterface.get() );
-	AddInterface( mBitRateInterface.get() );
+	mBitsPerSampleInterface.reset( new AnalyzerSettingInterfaceInteger() );
+	mBitsPerSampleInterface->SetTitleAndTooltip( "Bits per sample",  "Specify the number of individual bits that form a sample." );
+	mBitsPerSampleInterface->SetMax( 255 );
+	mBitsPerSampleInterface->SetMin( 1 );
+	mBitsPerSampleInterface->SetInteger( mBitsPerSample );
+
+	AddInterface( mClockChannelInterface.get() );
+	AddInterface( mDataChannelInterface.get() );
+	AddInterface( mBitsPerSampleInterface.get() );
 
 	AddExportOption( 0, "Export as text/csv file" );
 	AddExportExtension( 0, "text", "txt" );
 	AddExportExtension( 0, "csv", "csv" );
 
 	ClearChannels();
-	AddChannel( mInputChannel, "Serial", false );
+	AddChannel( mClockChannel, "Clock", false );
+	AddChannel( mDataChannel, "Data", false );
 }
 
 PDMAnalyzerSettings::~PDMAnalyzerSettings()
@@ -33,19 +40,22 @@ PDMAnalyzerSettings::~PDMAnalyzerSettings()
 
 bool PDMAnalyzerSettings::SetSettingsFromInterfaces()
 {
-	mInputChannel = mInputChannelInterface->GetChannel();
-	mBitRate = mBitRateInterface->GetInteger();
+	mClockChannel = mClockChannelInterface->GetChannel();
+	mDataChannel = mDataChannelInterface->GetChannel();
+	mBitsPerSample = mBitsPerSampleInterface->GetInteger();
 
 	ClearChannels();
-	AddChannel( mInputChannel, "PDM", true );
+	AddChannel( mClockChannel, "Clock", true );
+	AddChannel( mDataChannel, "Data", true );
 
 	return true;
 }
 
 void PDMAnalyzerSettings::UpdateInterfacesFromSettings()
 {
-	mInputChannelInterface->SetChannel( mInputChannel );
-	mBitRateInterface->SetInteger( mBitRate );
+	mClockChannelInterface->SetChannel( mClockChannel );
+	mDataChannelInterface->SetChannel( mDataChannel );
+	mBitsPerSampleInterface->SetInteger( mBitsPerSample );
 }
 
 void PDMAnalyzerSettings::LoadSettings( const char* settings )
@@ -53,11 +63,13 @@ void PDMAnalyzerSettings::LoadSettings( const char* settings )
 	SimpleArchive text_archive;
 	text_archive.SetString( settings );
 
-	text_archive >> mInputChannel;
-	text_archive >> mBitRate;
+	text_archive >> mClockChannel;
+    text_archive >> mDataChannel;
+	text_archive >> mBitsPerSample;
 
 	ClearChannels();
-	AddChannel( mInputChannel, "PDM", true );
+	AddChannel( mClockChannel, "Clock", true );
+    AddChannel( mDataChannel, "Data", true);
 
 	UpdateInterfacesFromSettings();
 }
@@ -66,8 +78,9 @@ const char* PDMAnalyzerSettings::SaveSettings()
 {
 	SimpleArchive text_archive;
 
-	text_archive << mInputChannel;
-	text_archive << mBitRate;
+	text_archive << mClockChannel;
+    text_archive << mDataChannel;
+	text_archive << mBitsPerSample;
 
 	return SetReturnString( text_archive.GetString() );
 }

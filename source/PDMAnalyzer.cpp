@@ -1,9 +1,10 @@
 #include "PDMAnalyzer.h"
 #include "PDMAnalyzerSettings.h"
 #include <AnalyzerChannelData.h>
+#include <stdlib.h>
 
 PDMAnalyzer::PDMAnalyzer()
-:	Analyzer2(),  
+:	Analyzer2(),
 	mSettings( new PDMAnalyzerSettings() ),
 	mSimulationInitilized( false )
 {
@@ -19,52 +20,71 @@ void PDMAnalyzer::SetupResults()
 {
 	mResults.reset( new PDMAnalyzerResults( this, mSettings.get() ) );
 	SetAnalyzerResults( mResults.get() );
-	mResults->AddChannelBubblesWillAppearOn( mSettings->mInputChannel );
+	mResults->AddChannelBubblesWillAppearOn( mSettings->mDataChannel );
 }
 
 void PDMAnalyzer::WorkerThread()
 {
-	mSampleRateHz = GetSampleRate();
+	// TODO(tannewt): Why is this a member and not a local?
+	mClock = GetAnalyzerChannelData( mSettings->mClockChannel );
+	mData = GetAnalyzerChannelData( mSettings->mDataChannel );
 
-	mSerial = GetAnalyzerChannelData( mSettings->mInputChannel );
+	// Try to find the real start of the clock by finding a rising edge where
+	// the low before it is relatively close to the same length as the following
+	// high.
 
-	if( mSerial->GetBitState() == BIT_LOW )
-		mSerial->AdvanceToNextEdge();
+	// Find the start of a low.
+	if( mClock->GetBitState() == BIT_HIGH ) {
+		mClock->AdvanceToNextEdge();
+	} else {
+		mClock->AdvanceToNextEdge();
+		mClock->AdvanceToNextEdge();
+	}
 
-	U32 samples_per_bit = mSampleRateHz / mSettings->mBitRate;
-	U32 samples_to_first_center_of_first_data_bit = U32( 1.5 * double( mSampleRateHz ) / double( mSettings->mBitRate ) );
+	U64 low_start = mClock->GetSampleNumber();
+	U64 low_duration = 0;
+	U64 high_duration = 0;
+	mClock->AdvanceToNextEdge();
+	while (low_duration == 0 || abs(low_duration - high_duration) > (low_duration + high_duration) / 2) {
+		mClock->AdvanceToNextEdge(); // Falling edge
+		low_start = mClock->GetSampleNumber();
+		mClock->AdvanceToNextEdge(); // Rising edge
+		low_duration = mClock->GetSampleNumber() - low_start;
+		high_duration = mClock->GetSampleOfNextEdge() - mClock->GetSampleNumber();
+	}
+
 
 	for( ; ; )
 	{
 		U8 data = 0;
-		U8 mask = 1 << 7;
-		
-		mSerial->AdvanceToNextEdge(); //falling edge -- beginning of the start bit
 
-		U64 starting_sample = mSerial->GetSampleNumber();
+		U64 starting_sample = mClock->GetSampleNumber();
 
-		mSerial->Advance( samples_to_first_center_of_first_data_bit );
+		//let's put a dot exactly where we sample this bit:
+		mResults->AddMarker( mClock->GetSampleNumber(), AnalyzerResults::Dot, mSettings->mDataChannel );
 
-		for( U32 i=0; i<8; i++ )
+		for( U32 i=0; i< mSettings->mBitsPerSample; i++ )
 		{
-			//let's put a dot exactly where we sample this bit:
-			mResults->AddMarker( mSerial->GetSampleNumber(), AnalyzerResults::Dot, mSettings->mInputChannel );
+			mData->AdvanceToAbsPosition(mClock->GetSampleNumber());
 
-			if( mSerial->GetBitState() == BIT_HIGH )
-				data |= mask;
+			if( mData->GetBitState() == BIT_HIGH )
+				data++;
 
-			mSerial->Advance( samples_per_bit );
+			// Next falling edge.
+			// TODO(tannewt): Support stereo data by reading the data here.
+			mClock->AdvanceToNextEdge();
 
-			mask = mask >> 1;
+			// Next rising edge.
+			mClock->AdvanceToNextEdge();
 		}
 
 
-		//we have a byte to save. 
+		//we have a byte to save.
 		Frame frame;
 		frame.mData1 = data;
 		frame.mFlags = 0;
 		frame.mStartingSampleInclusive = starting_sample;
-		frame.mEndingSampleInclusive = mSerial->GetSampleNumber();
+		frame.mEndingSampleInclusive = mClock->GetSampleNumber();
 
 		mResults->AddFrame( frame );
 		mResults->CommitResults();
@@ -90,7 +110,7 @@ U32 PDMAnalyzer::GenerateSimulationData( U64 minimum_sample_index, U32 device_sa
 
 U32 PDMAnalyzer::GetMinimumSampleRateHz()
 {
-	return mSettings->mBitRate * 4;
+	return 500000;
 }
 
 const char* PDMAnalyzer::GetAnalyzerName() const

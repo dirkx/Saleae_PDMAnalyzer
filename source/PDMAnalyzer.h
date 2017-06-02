@@ -24,15 +24,11 @@ public:
 protected: //vars
 	std::auto_ptr< PDMAnalyzerSettings > mSettings;
 	std::auto_ptr< PDMAnalyzerResults > mResults;
-	AnalyzerChannelData* mSerial;
+	AnalyzerChannelData* mClock;
+	AnalyzerChannelData* mData;
 
 	PDMSimulationDataGenerator mSimulationDataGenerator;
 	bool mSimulationInitilized;
-
-	//Serial analysis vars:
-	U32 mSampleRateHz;
-	U32 mStartOfStopBitOffset;
-	U32 mEndOfStopBitOffset;
 };
 
 extern "C" ANALYZER_EXPORT const char* __cdecl GetAnalyzerName();
