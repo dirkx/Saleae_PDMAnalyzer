@@ -3,10 +3,16 @@ This analyzer is useful for PDM streams. It counts the number of 1s present on
 the data line for a given clock's rising edges. In PDM terms, that means it only
 does the first channel. It doesn't handle stereo currently.
 
+## Sync
+
 It does its best to start with the clock signal. However, it may be shifted
 against the samples you receive in your code. Changing the bits per sample
 configuration sample to 1 can make it easy to read individual bits instead of the
 ones count for a set of bits.
+
+Alternatively - you can specify an optional 'sync' channel; which will reset
+the count to 0 upon going low. This makes byte or word by word comparisons
+easier.
 
 # Using
 
