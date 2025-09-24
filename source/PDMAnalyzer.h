@@ -26,6 +26,7 @@ protected: //vars
 	std::auto_ptr< PDMAnalyzerResults > mResults;
 	AnalyzerChannelData* mClock;
 	AnalyzerChannelData* mData;
+	AnalyzerChannelData* mSync;
 
 	PDMSimulationDataGenerator mSimulationDataGenerator;
 	bool mSimulationInitilized;

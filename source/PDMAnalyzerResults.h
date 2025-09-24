@@ -24,6 +24,9 @@ protected: //functions
 protected:  //vars
 	PDMAnalyzerSettings* mSettings;
 	PDMAnalyzer* mAnalyzer;
+
+private:
+        virtual void getValue(Frame frame, DisplayBase display_base, char * result_str, size_t result_len);
 };
 
 #endif //PDM_ANALYZER_RESULTS

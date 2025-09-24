@@ -28,6 +28,7 @@ void PDMAnalyzer::WorkerThread()
 	// TODO(tannewt): Why is this a member and not a local?
 	mClock = GetAnalyzerChannelData( mSettings->mClockChannel );
 	mData = GetAnalyzerChannelData( mSettings->mDataChannel );
+	mSync =  (mSettings->mSyncChannel == UNDEFINED_CHANNEL) ? NULL : GetAnalyzerChannelData( mSettings->mSyncChannel );
 
 	// Try to find the real start of the clock by finding a rising edge where
 	// the low before it is relatively close to the same length as the following
@@ -37,11 +38,11 @@ void PDMAnalyzer::WorkerThread()
 	if( mClock->GetBitState() == BIT_HIGH ) {
 		mClock->AdvanceToNextEdge();
 	} 
-#if 0
 	else {
 		mClock->AdvanceToNextEdge();
 		mClock->AdvanceToNextEdge();
 	}
+#if 0
 	U64 low_start = mClock->GetSampleNumber();
 	U64 low_duration = 0;
 	U64 high_duration = 0;
@@ -57,12 +58,28 @@ void PDMAnalyzer::WorkerThread()
 
 	for( ; ; )
 	{
+		// Either count as 0... Q or -Q/2 .. 0 .. +Q/2 in two complement.
+                //
+		// U8 data = (mSettings->mSignedValues) ? (-mSettings->mBitsPerSample / 2) : 0;
 		U8 data = 0;
 
 		U64 starting_sample = mClock->GetSampleNumber();
 		mResults->AddMarker( mClock->GetSampleNumber(), AnalyzerResults::Dot, mSettings->mDataChannel);
 
-		for( U32 i=0; i< mSettings->mBitsPerSample; i++ )
+		// Check if we have a counter reset in our current Q run.
+		//
+		U64 next_reset = -1;
+		if (mSync) {
+			next_reset = mSync->GetSampleOfNextEdge();
+			if (next_reset) {
+				mSync->AdvanceToNextEdge();
+				mSync->AdvanceToNextEdge();
+			} else {
+				next_reset = -1;
+			};
+		};
+
+		for( U32 i=0; i< mSettings->mBitsPerSample && mClock->GetSampleNumber() < next_reset; i++ )
 		{
 			mResults->AddMarker( mClock->GetSampleNumber(), 
 				(i) ? AnalyzerResults::DownArrow : AnalyzerResults::Dot, mSettings->mClockChannel);
@@ -77,6 +94,7 @@ void PDMAnalyzer::WorkerThread()
 			// TODO(tannewt): Support stereo data by reading the data here.
 			mClock->AdvanceToNextEdge();
 
+
 			// Place the one in the middle of this low; alternative is getting it about
 			// 20-30 nanosconds after the down.
 			U64 e = mClock->GetSampleNumber();
@@ -84,10 +102,8 @@ void PDMAnalyzer::WorkerThread()
 
 			// Next rising edge.
 			mClock->AdvanceToNextEdge();
-
 		}
-
-
+			
 		//we have a byte to save.
 		Frame frame;
 		frame.mData1 = data;
